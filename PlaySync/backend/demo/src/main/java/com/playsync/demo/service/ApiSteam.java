@@ -39,9 +39,7 @@ public class ApiSteam {
 
 		List<ItensBuscadorPeloTermo> itensNoBanco = this.itensRepository.findByName(termo);
 		System.out.println(itensNoBanco);
-		List<ItensFiltradosPeloTermoDTO> itensVindoDaApi = new ArrayList<>();
-		
-		
+
 		if (itensNoBanco.isEmpty()) {
 			return metodoChamaApiEPersiste(termo);
 		}
@@ -54,7 +52,7 @@ public class ApiSteam {
 
 	private BuscaPorTermoDTO metodoChamaApiEPersiste(String termo) {
 		BuscaPorTermoDTO buscaDto = this.webConfig.buscarPorTermo(termo).block();
-		
+
 		if (buscaDto == null) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Nao encontrado nenhuma informacao");
 		}
@@ -62,22 +60,23 @@ public class ApiSteam {
 		List<ItensBuscadorPeloTermo> listaDeItens = new ArrayList<>();
 		BuscaPorTermo buscaPorTermo = new BuscaPorTermo(buscaDto.getItens().size());
 		for (ItensFiltradosPeloTermoDTO itens : buscaDto.getItens()) {
-			
-			if(itens.getPrecos() == null){
-				itens.setPrecos(new PrecoDeItensDTO(0.0,0.0));
+
+			if (itens.getPrecos() == null) {
+				itens.setPrecos(new PrecoDeItensDTO(0.0, 0.0));
 			}
-			
-			itens.getPrecos().setPrecoFinal(itens.getPrecos().getPrecoFinal()/100.0);
-			itens.getPrecos().setPrecoInicial((itens.getPrecos().getPrecoInicial()/100.0));
+
+			itens.getPrecos().setPrecoFinal(itens.getPrecos().getPrecoFinal() / 100.0);
+			itens.getPrecos().setPrecoInicial((itens.getPrecos().getPrecoInicial() / 100.0));
 			System.out.println(itens.getPrecos().getPrecoFinal());
 			ItensBuscadorPeloTermo itensBuscadoPeloTermo = new ItensBuscadorPeloTermo(itens.getIdGame(),
 					itens.getName(), buscaPorTermo, itens.getImg(), null, LocalDateTime.now());
-			if(itens.getPossuiCompatibilidadeComControle().equalsIgnoreCase("FULL")){
-				itensBuscadoPeloTermo.setPossuiCompatibilidadeComControle(ControllerSupport.FULL);
-			}else{
+			if (itens.getPossuiCompatibilidadeComControle() == null) {
 				itensBuscadoPeloTermo.setPossuiCompatibilidadeComControle(ControllerSupport.NULL);
+
+			} else {
+				itensBuscadoPeloTermo.setPossuiCompatibilidadeComControle(ControllerSupport.FULL);
 			}
-			
+
 			PrecoDeItensDTO precoDTO = itens.getPrecos();
 
 			if (precoDTO != null) {
@@ -116,18 +115,35 @@ public class ApiSteam {
 			}
 		}
 		for (ItensFiltradosPeloTermoDTO i : respostaApi.getItens()) {
+
+			if (i.getPrecos() == null) {
+				i.setPrecos(new PrecoDeItensDTO(0.0, 0.0));
+			}
+			if (i.getPrecos().getPrecoInicial() == null) {
+				i.getPrecos().setPrecoInicial(0.0);
+			}
+			if (i.getPrecos().getPrecoFinal() == null) {
+				i.getPrecos().setPrecoFinal(0.0);
+			}
+
 			for (ItensBuscadorPeloTermo it : listaDeItensVencidos) {
+
 				if (i.getIdGame().equals(it.getIdGame())) {
-					for (PrecosJogos p : it.getPrecos()) {
-						if (p.getPreco().getId().equals(it.getId())) {
-							p.setPrecoFinal(i.getPrecos().getPrecoFinal()/100.0);
-							p.setPrecoInicial(i.getPrecos().getPrecoInicial()/100.0);
-							this.precoRepository.save(p);
-						}
+
+					if (i.getPossuiCompatibilidadeComControle() == null) {
+						it.setPossuiCompatibilidadeComControle(ControllerSupport.NULL);
+					} else {
+						it.setPossuiCompatibilidadeComControle(ControllerSupport.FULL);
 					}
+
+					for (PrecosJogos p : it.getPrecos()) {
+						p.setPrecoFinal(i.getPrecos().getPrecoFinal() / 100.0);
+						p.setPrecoInicial(i.getPrecos().getPrecoInicial() / 100.0);
+						this.precoRepository.save(p);
+					}
+
 					it.setDataPesquisaUsuario(LocalDateTime.now());
 				}
-
 			}
 		}
 
@@ -144,17 +160,18 @@ public class ApiSteam {
 
 			if (i.getPrecos().isEmpty()) {
 
-				itensDto.add(new ItensFiltradosPeloTermoDTO(i.getIdGame(), i.getNome(), new PrecoDeItensDTO(0.0, 0.0), i.getImg(), null));
+				itensDto.add(new ItensFiltradosPeloTermoDTO(i.getIdGame(), i.getNome(), new PrecoDeItensDTO(0.0, 0.0),
+						i.getImg(), i.getPossuiCompatibilidadeComControle().toString()));
 
 			} else {
 
 				PrecosJogos p = i.getPrecos().get(0);
 				itensDto.add(new ItensFiltradosPeloTermoDTO(i.getIdGame(), i.getNome(),
-						new PrecoDeItensDTO(p.getPrecoInicial(), p.getPrecoFinal()), i.getImg(), null));
+						new PrecoDeItensDTO(p.getPrecoInicial(), p.getPrecoFinal()), i.getImg(),
+						i.getPossuiCompatibilidadeComControle().toString()));
 			}
 		}
 		return new BuscaPorTermoDTO(itensDto.size(), itensDto);
 	}
 
-	
 }

@@ -13,6 +13,8 @@ import jakarta.annotation.Generated;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -43,6 +45,7 @@ public class ItensBuscadorPeloTermo {
 	private List<PrecosJogos> precos = new ArrayList<>();
 	private String img;
 	@Column(name = "possui_compatibilidade_com_controle")
+	@Enumerated(EnumType.STRING)
 	private ControllerSupport possuiCompatibilidadeComControle;
 	@Column(name = "data_pesquisa_usuario")
 	private LocalDateTime dataPesquisaUsuario;

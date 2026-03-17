@@ -15,6 +15,8 @@ import lombok.Setter;
 @Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PlataformasRawgDTO {
+    @JsonProperty("id")
+    private Long idPlataforma;
     @JsonProperty("name")
     private String plataforma;
 }

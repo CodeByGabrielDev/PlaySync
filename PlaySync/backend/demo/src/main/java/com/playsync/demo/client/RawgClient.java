@@ -1,5 +1,6 @@
 package com.playsync.demo.client;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -18,13 +19,12 @@ public class RawgClient {
 
     private final WebClient webClient;
 
-    public RawgClient(WebClient webClient) {
+    public RawgClient(@Qualifier("rawgCliente") WebClient webClient) {
         this.webClient = webClient;
     }
 
     /*
-     * https://api.rawg.io/api/games?search=the%20last%20of%20us&key=
-     * a27c502d9b114cde87e03e215a3d39e3
+     * https://api.rawg.io/api/games?search=the%20last%20of%20us&key=a27c502d9b114cde87e03e215a3d39e3
      */
     
     public Mono<TotalItensBuscadosRawgDTO> buscarPorTermoRawg(String termo) {

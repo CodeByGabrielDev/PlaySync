@@ -1,5 +1,8 @@
 package com.playsync.demo.Entities;
 
+import org.hibernate.annotations.Collate;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -20,14 +23,17 @@ public class LojasRawgApi {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String nome;    
+    private String nome;
+    @Column(name = "id_loja")
+    private Long idLoja;
     @ManyToOne
     @JoinColumn(name = "id_rawg_api_busca_termo")
     private RawgApiBuscaTermo rawgApiBuscaTermo;
-    public LojasRawgApi(String nome, RawgApiBuscaTermo rawgApiBuscaTermo) {
+
+    public LojasRawgApi(String nome, Long idLoja, RawgApiBuscaTermo rawgApiBuscaTermo) {
         this.nome = nome;
+        this.idLoja = idLoja;
         this.rawgApiBuscaTermo = rawgApiBuscaTermo;
     }
 
-    
 }

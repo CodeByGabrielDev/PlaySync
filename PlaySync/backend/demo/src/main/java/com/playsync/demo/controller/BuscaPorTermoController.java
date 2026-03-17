@@ -16,11 +16,12 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api-playsync")
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174"})
+@CrossOrigin(origins = { "http://localhost:5173", "http://localhost:5174" })
 public class BuscaPorTermoController {
 
 	private final ApiSteam api;
 	private final RawgApiService rawgApi;
+
 	@PostMapping("/search")
 	public BuscaPorTermoDTO buscar(@RequestParam String termo) {
 		System.out.println("Recebida requisicao de busca para termo: " + termo);
@@ -29,8 +30,9 @@ public class BuscaPorTermoController {
 		System.out.println("Quantidade de itens: " + (result.getItens() != null ? result.getItens().size() : 0));
 		return result;
 	}
+
 	@PostMapping("/search-in-rawg")
-	public TotalItensBuscadosRawgDTO buscarRawg(@RequestParam String termo){
+	public TotalItensBuscadosRawgDTO buscarRawg(@RequestParam String termo) {
 		return this.rawgApi.buscarItensNaApi(termo);
 	}
 

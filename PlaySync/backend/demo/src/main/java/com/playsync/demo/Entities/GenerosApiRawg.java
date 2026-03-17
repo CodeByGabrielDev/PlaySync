@@ -1,5 +1,6 @@
 package com.playsync.demo.Entities;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -11,7 +12,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-
 @Entity
 @Getter
 @Setter
@@ -21,16 +21,18 @@ public class GenerosApiRawg {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(name = "id_genero")
+    private Long idGenero;
 
     private String nome;
     @ManyToOne
     @JoinColumn(name = "id_rawg_api_busca_termo")
     private RawgApiBuscaTermo rawgApiBuscaTermo;
-    public GenerosApiRawg(String nome, RawgApiBuscaTermo rawgApiBuscaTermo) {
+
+    public GenerosApiRawg(String nome, Long idGenero, RawgApiBuscaTermo rawgApiBuscaTermo) {
         this.nome = nome;
+        this.idGenero = idGenero;
         this.rawgApiBuscaTermo = rawgApiBuscaTermo;
     }
-
-    
 
 }

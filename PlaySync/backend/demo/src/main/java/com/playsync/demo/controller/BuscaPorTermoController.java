@@ -7,7 +7,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.playsync.demo.dtoresponse.BuscaPorTermoDTO;
+import com.playsync.demo.dtoresponse.TotalItensBuscadosRawgDTO;
 import com.playsync.demo.service.ApiSteam;
+import com.playsync.demo.service.RawgApiService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -18,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 public class BuscaPorTermoController {
 
 	private final ApiSteam api;
-
+	private final RawgApiService rawgApi;
 	@PostMapping("/search")
 	public BuscaPorTermoDTO buscar(@RequestParam String termo) {
 		System.out.println("Recebida requisicao de busca para termo: " + termo);
@@ -26,6 +28,10 @@ public class BuscaPorTermoController {
 		System.out.println("Resultado retornado: " + result);
 		System.out.println("Quantidade de itens: " + (result.getItens() != null ? result.getItens().size() : 0));
 		return result;
+	}
+	@PostMapping("/search-in-rawg")
+	public TotalItensBuscadosRawgDTO buscarRawg(@RequestParam String termo){
+		return this.rawgApi.buscarItensNaApi(termo);
 	}
 
 }

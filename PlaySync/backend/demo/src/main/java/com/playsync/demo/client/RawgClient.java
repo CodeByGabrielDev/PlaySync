@@ -1,12 +1,15 @@
 package com.playsync.demo.client;
 
+import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.playsync.demo.dtoresponse.BuscaPorTermoDTO;
+import com.playsync.demo.dtoresponse.TotalItensBuscadosRawgDTO;
 
 import reactor.core.publisher.Mono;
-
+@Service
 public class RawgClient {
 
     /*
@@ -23,8 +26,8 @@ public class RawgClient {
      * https://api.rawg.io/api/games?search=the%20last%20of%20us&key=
      * a27c502d9b114cde87e03e215a3d39e3
      */
-
-    public Mono<BuscaPorTermoDTO> buscarPorTermoRawg(String termo) {
+    
+    public Mono<TotalItensBuscadosRawgDTO> buscarPorTermoRawg(String termo) {
     return this.webClient.get()
             .uri(uri -> uri.path("/games")
                     .queryParam("search", termo)
@@ -35,6 +38,6 @@ public class RawgClient {
                     .queryParam("language", "pt")
                     .build())
             .retrieve()
-            .bodyToMono(BuscaPorTermoDTO.class);
+            .bodyToMono(TotalItensBuscadosRawgDTO.class);
 }
 }

@@ -10,6 +10,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Getter;
@@ -42,12 +44,17 @@ stores	List<String>	Lojas onde está disponível, ex.: ["Steam", "Epic"] */
     private String imgBackground;
     private String notaMediaJogo;
     private String numeroAvaliacoes;
+    @ManyToOne
+    @JoinColumn(name = "id_total_itens_buscados_rawg")
+    private TotalItensBuscadosRawg totalItensBuscadosRawg;
     @OneToMany(mappedBy = "apiBuscaTermo")
     private List<PlataformasRawg>plataformas = new ArrayList<>();
     @OneToMany(mappedBy = "rawgApiBuscaTermo")
     private List<GenerosApiRawg>rawgApiBuscaTermo = new ArrayList<>();
     @OneToMany(mappedBy = "rawgApiBuscaTermo")
     private List<LojasRawgApi>rawgApiBusca = new ArrayList<>();
+
+
 
 
      

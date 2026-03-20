@@ -1,14 +1,19 @@
 package com.playsync.demo.controller;
 
+import java.util.List;
+
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.playsync.demo.dtoresponse.BuscaPorTermoDTO;
+import com.playsync.demo.dtoresponse.CheapSharkApiDto;
 import com.playsync.demo.dtoresponse.TotalItensBuscadosRawgDTO;
 import com.playsync.demo.service.ApiSteam;
+import com.playsync.demo.service.CheapSharkApiService;
 import com.playsync.demo.service.RawgApiService;
 
 import lombok.RequiredArgsConstructor;
@@ -21,6 +26,7 @@ public class BuscaPorTermoController {
 
 	private final ApiSteam api;
 	private final RawgApiService rawgApi;
+	private final CheapSharkApiService cheapSharkApi;
 
 	@PostMapping("/search")
 	public BuscaPorTermoDTO buscar(@RequestParam String termo) {
@@ -36,4 +42,8 @@ public class BuscaPorTermoController {
 		return this.rawgApi.principalMethod(termo);
 	}
 
+	@GetMapping("/get-prices")
+	public List<CheapSharkApiDto> buscarPrecosCheapShark(@RequestParam String termo) {
+		return this.cheapSharkApi.pegarInformacoesNaApi(termo);
+	}
 }

@@ -22,4 +22,12 @@ public class WebClientConfig {
 	public WebClient rawgCliente(WebClient.Builder builder) {
 		return builder.baseUrl("https://api.rawg.io/api").build();
 	}
+
+	@Bean
+	public WebClient cheapSharkApiCliente(WebClient.Builder builder) {
+		return builder.baseUrl("https://www.cheapshark.com/api/1.0").build();
+	}
+
+	
+
 }

@@ -12,11 +12,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.playsync.demo.dtoresponse.BuscaPorTermoDTO;
 import com.playsync.demo.dtoresponse.CheapSharkApiDto;
-import com.playsync.demo.dtoresponse.MergeCheapAndRawgResponse;
 import com.playsync.demo.dtoresponse.TotalItensBuscadosRawgDTO;
 import com.playsync.demo.service.ApiSteam;
 import com.playsync.demo.service.CheapSharkApiService;
-import com.playsync.demo.service.MergeServiceCheapSharkAndRawg;
 import com.playsync.demo.service.RawgApiService;
 
 import lombok.RequiredArgsConstructor;
@@ -30,7 +28,6 @@ public class BuscaPorTermoController {
 	private final ApiSteam api;
 	private final RawgApiService rawgApi;
 	private final CheapSharkApiService cheapSharkApi;
-	private final MergeServiceCheapSharkAndRawg mergeServiceCheapSharkAndRawg;
 
 	@PostMapping("/search")
 	public BuscaPorTermoDTO buscar(@RequestParam String termo) {
@@ -51,8 +48,5 @@ public class BuscaPorTermoController {
 		return this.cheapSharkApi.pegarInformacoesNaApi(termo);
 	}
 
-	@GetMapping("/get-merged")
-	public List<MergeCheapAndRawgResponse> findGamesByWordMergedRawgAndCheapShark(@RequestParam String termo){
-		return this.mergeServiceCheapSharkAndRawg.mergearRawgECheapShark(termo);
-	}
+	
 }

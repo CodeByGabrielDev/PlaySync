@@ -1,5 +1,8 @@
 package com.playsync.demo.dtoresponse;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.AllArgsConstructor;
@@ -14,10 +17,5 @@ import lombok.Setter;
 public class MergerCheapSharkGamesAndStores {
 
     private String nomeJogo;
-    private Double precoAtual;
-    private Double precoOriginal;
-    private Double desconto;
-    private Long storeId;
-    private String nomeLoja;
-
+    List<LojaESeusPrecosResponseCheapShark> lojaESeusPrecosResponseCheapSharks = new ArrayList<>();
 }

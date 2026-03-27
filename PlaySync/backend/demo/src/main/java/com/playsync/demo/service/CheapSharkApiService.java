@@ -18,6 +18,7 @@ import com.playsync.demo.Entities.RawgApiBuscaTermo;
 import com.playsync.demo.client.CheapSharkClient;
 import com.playsync.demo.dtoresponse.CheapSharkApiDto;
 import com.playsync.demo.dtoresponse.CheapSharkApiStoresDto;
+import com.playsync.demo.dtoresponse.LojaESeusPrecosResponseCheapShark;
 import com.playsync.demo.dtoresponse.MergerCheapSharkGamesAndStores;
 import com.playsync.demo.dtoresponse.RawgApiBuscaTermoDTO;
 import com.playsync.demo.repository.CheapSharkJogosEPrecosApiRepository;
@@ -116,7 +117,8 @@ public class CheapSharkApiService {
             this.cheapSharkJogosEPrecosApiRepository.saveAll(cheapSharkJogosEPrecosApis);
             return mergearApisCheapShark(cheapSharkJogosEPrecosApis, cheapSharkLojasApis);
             /*
-            o sistema  */
+             * o sistema
+             */
         }
         System.out.println(cheapSharkApiDtos);
         return new ArrayList<>();
@@ -162,24 +164,26 @@ public class CheapSharkApiService {
     private List<MergerCheapSharkGamesAndStores> mergearApisCheapShark(List<CheapSharkJogosEPrecosApi> listaDeJogos,
             List<CheapSharkLojasApi> cheapSharkLojasApis) {
         Map<Long, CheapSharkLojasApi> mapperLojas = new HashMap<>();
-        List<MergerCheapSharkGamesAndStores> mergerCheapSharkGamesAndStores = new ArrayList<>();
         for (CheapSharkLojasApi cheapSharkLojasApi : cheapSharkLojasApis) {
             mapperLojas.put(cheapSharkLojasApi.getIdLoja(), cheapSharkLojasApi);
         }
+        Map<String, MergerCheapSharkGamesAndStores> mapperJogos = new HashMap<>();
         for (CheapSharkJogosEPrecosApi cheapSharkJogosEPrecosApi : listaDeJogos) {
             CheapSharkLojasApi cheapSharkLojasApi = mapperLojas.get(cheapSharkJogosEPrecosApi.getStoreId());
+            String nomeJogo = cheapSharkJogosEPrecosApi.getNomeJogo();
+            mapperJogos.putIfAbsent(nomeJogo, new MergerCheapSharkGamesAndStores(nomeJogo, new ArrayList<>()));
+            MergerCheapSharkGamesAndStores response = mapperJogos.get(cheapSharkJogosEPrecosApi.getNomeJogo());
             if (cheapSharkLojasApi != null) {
-                mergerCheapSharkGamesAndStores.add(new MergerCheapSharkGamesAndStores(
-                        cheapSharkJogosEPrecosApi.getNomeJogo(), cheapSharkJogosEPrecosApi.getPrecoAtual(),
-                        cheapSharkJogosEPrecosApi.getPrecoOriginal(), cheapSharkJogosEPrecosApi.getDesconto(),
-                        cheapSharkJogosEPrecosApi.getStoreId(), cheapSharkLojasApi.getNomeLoja()));
+                LojaESeusPrecosResponseCheapShark lojaESeusPrecosResponseCheapShark = new LojaESeusPrecosResponseCheapShark(
+                        cheapSharkJogosEPrecosApi.getPrecoAtual(), cheapSharkJogosEPrecosApi.getPrecoOriginal(),
+                        cheapSharkJogosEPrecosApi.getDesconto(), cheapSharkJogosEPrecosApi.getNomeJogo(),
+                        cheapSharkJogosEPrecosApi.getStoreId(), cheapSharkLojasApi.getNomeLoja());
+                response.getLojaESeusPrecosResponseCheapSharks().add(lojaESeusPrecosResponseCheapShark);
             }
+
         }
-        return mergerCheapSharkGamesAndStores;
+        return new ArrayList<>(mapperJogos.values());
     }
-    /*
-     * IMPLEMENTAR IDEIA DE LISTA DE LOJAS PARA CADA JOGO SE NAO RETORNA DIVERSOS
-     * OBJETOS CADA UM SENDO PARA CADA LOJA, POLUINDO O RETORNO PARA O USUARIO.
-     */
+    
 
 }

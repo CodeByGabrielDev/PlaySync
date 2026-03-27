@@ -1,5 +1,6 @@
 package com.playsync.demo.Entities;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.hibernate.annotations.OnDelete;
@@ -32,7 +33,7 @@ public class CheapSharkLojasApi {
     @Column(name = "nome_loja")
     private String nomeLoja;
     @OneToMany(mappedBy = "cheapSharkLojasApi")
-    private List<CheapSharkJogosEPrecosApi> cheapSharkJogosEPrecos;
+    private List<CheapSharkJogosEPrecosApi> cheapSharkJogosEPrecos = new ArrayList<>();
 
     public CheapSharkLojasApi(Long idLoja, String nomeLoja) {
         this.idLoja = idLoja;

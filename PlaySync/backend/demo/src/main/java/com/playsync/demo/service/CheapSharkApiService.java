@@ -34,6 +34,7 @@ public class CheapSharkApiService {
     private final CheapSharkClient cheapSharkClient;
     private final CheapSharkLojasApiRepository cheapSharkLojasApiRepository;
     private final CheapSharkJogosEPrecosApiRepository cheapSharkJogosEPrecosApiRepository;
+    private final CotacaoDolarService cotacaoDolarService;
 
     public List<MergerCheapSharkGamesAndStores> principalMethod(String termo) {
         List<CheapSharkJogosEPrecosApi> cheapSharkApiBanco = this.cheapSharkJogosEPrecosApiRepository
@@ -184,6 +185,5 @@ public class CheapSharkApiService {
         }
         return new ArrayList<>(mapperJogos.values());
     }
-    
 
 }

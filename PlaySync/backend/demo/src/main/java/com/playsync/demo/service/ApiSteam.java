@@ -41,15 +41,7 @@ public class ApiSteam {
 		List<ItensFiltradosPeloTermoDTO> itensVindoDaApi = new ArrayList<>();
 		
 		System.out.println("Validacao: " + validacao(itensNoBanco));
-		
-		// Debug: forçar atualização sempre para testar a API
-		// Remover depois de testar
-		boolean forcarApi = true;
-		
-		if (itensNoBanco.isEmpty() || forcarApi) {
-			System.out.println("Banco vazio ou forçando API, chamando API externa...");
-			return metodoChamaApiEPersiste(termo);
-		}
+
 		if (validacao(itensNoBanco)) {
 			return atualiza(itensNoBanco, termo);
 		}
@@ -110,7 +102,7 @@ public class ApiSteam {
 	}
 
 	private Boolean validacao(List<ItensBuscadorPeloTermo> lista) {
-		LocalDateTime dataLimite = LocalDateTime.now().minusSeconds(10);
+		LocalDateTime dataLimite = LocalDateTime.now().minusMinutes(30);
 		for (ItensBuscadorPeloTermo i : lista) {
 			if (i.getDataPesquisaUsuario().isBefore(dataLimite)) {
 				return true;
@@ -120,7 +112,7 @@ public class ApiSteam {
 	}
 
 	private BuscaPorTermoDTO atualiza(List<ItensBuscadorPeloTermo> lista, String termo) {
-		LocalDateTime dataLimite = LocalDateTime.now().minusSeconds(10);
+		LocalDateTime dataLimite = LocalDateTime.now().minusHours(6);
 		BuscaPorTermoDTO respostaApi = webConfig.buscarPorTermo(termo).block();
 		List<ItensBuscadorPeloTermo> listaDeItensVencidos = new ArrayList<>();
 

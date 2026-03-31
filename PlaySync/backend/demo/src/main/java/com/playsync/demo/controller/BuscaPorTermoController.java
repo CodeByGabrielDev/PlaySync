@@ -21,10 +21,19 @@ public class BuscaPorTermoController {
 
 	@PostMapping("/search")
 	public BuscaPorTermoDTO buscar(@RequestParam String termo) {
-		System.out.println("Recebida requisicao de busca para termo: " + termo);
+		long startTotal = System.currentTimeMillis();
+		System.out.println("[BUSCA] Recebida requisicao de busca para termo: " + termo);
+		
+		long startBusca = System.currentTimeMillis();
 		BuscaPorTermoDTO result = this.api.buscaPorTermo(termo);
-		System.out.println("Resultado retornado: " + result);
-		System.out.println("Quantidade de itens: " + (result.getItens() != null ? result.getItens().size() : 0));
+		long endBusca = System.currentTimeMillis();
+		
+		System.out.println("[BUSCA] Tempo api.buscaPorTermo(): " + (endBusca - startBusca) + "ms");
+		System.out.println("[BUSCA] Quantidade de itens: " + (result.getItens() != null ? result.getItens().size() : 0));
+		
+		long endTotal = System.currentTimeMillis();
+		System.out.println("[BUSCA] Tempo TOTAL da requisicao: " + (endTotal - startTotal) + "ms");
+		
 		return result;
 	}
 

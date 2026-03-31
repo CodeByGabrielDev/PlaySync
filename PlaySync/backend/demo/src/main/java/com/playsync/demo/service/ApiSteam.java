@@ -102,7 +102,7 @@ public class ApiSteam {
 	}
 
 	private Boolean validacao(List<ItensBuscadorPeloTermo> lista) {
-		LocalDateTime dataLimite = LocalDateTime.now().minusMinutes(30);
+		LocalDateTime dataLimite = LocalDateTime.now().minusHours(6);
 		for (ItensBuscadorPeloTermo i : lista) {
 			if (i.getDataPesquisaUsuario().isBefore(dataLimite)) {
 				return true;

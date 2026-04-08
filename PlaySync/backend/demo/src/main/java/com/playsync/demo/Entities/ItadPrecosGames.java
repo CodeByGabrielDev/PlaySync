@@ -43,4 +43,7 @@ public class ItadPrecosGames {
      * platforms → sistemas compatíveis (ex: Windows)
      */
 
+  
+
+    
 }

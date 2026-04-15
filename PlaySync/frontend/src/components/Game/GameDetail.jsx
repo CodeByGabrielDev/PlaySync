@@ -1,19 +1,39 @@
-import { useState } from 'react';
-import { Star, TrendingDown, ExternalLink, ChevronLeft, Image } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Star, TrendingDown, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import PriceOffer from './PriceOffer';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1612287230217-8c7684717995?w=400&h=300&fit=crop';
+const AUTOPLAY_INTERVAL = 3500;
 
 /* ── Screenshots Gallery ─────────────────────────────────── */
 function ScreenshotsGallery({ screenshots }) {
   const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
+
+  const prev = useCallback(() =>
+    setActive((i) => (i - 1 + screenshots.length) % screenshots.length),
+  [screenshots.length]);
+
+  const next = useCallback(() =>
+    setActive((i) => (i + 1) % screenshots.length),
+  [screenshots.length]);
+
+  useEffect(() => {
+    if (paused || screenshots.length <= 1) return;
+    const id = setInterval(next, AUTOPLAY_INTERVAL);
+    return () => clearInterval(id);
+  }, [paused, next, screenshots.length]);
 
   if (!screenshots?.length) return null;
 
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
       {/* Main image */}
-      <div className="relative w-full aspect-video bg-zinc-950">
+      <div
+        className="relative w-full aspect-video bg-zinc-950 group"
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
+      >
         <img
           key={active}
           src={screenshots[active]}
@@ -21,7 +41,32 @@ function ScreenshotsGallery({ screenshots }) {
           className="w-full h-full object-cover animate-fade-in"
           onError={(e) => { e.target.src = FALLBACK_IMAGE; }}
         />
-        {/* Image counter */}
+
+        {/* Arrow — prev */}
+        <button
+          onClick={prev}
+          className="absolute left-2 top-1/2 -translate-y-1/2
+                     bg-zinc-950/60 hover:bg-zinc-950/90 backdrop-blur-sm
+                     text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100
+                     transition-all duration-200 hover:scale-110"
+          aria-label="Anterior"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+
+        {/* Arrow — next */}
+        <button
+          onClick={next}
+          className="absolute right-2 top-1/2 -translate-y-1/2
+                     bg-zinc-950/60 hover:bg-zinc-950/90 backdrop-blur-sm
+                     text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100
+                     transition-all duration-200 hover:scale-110"
+          aria-label="Próximo"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
+
+        {/* Counter */}
         <div className="absolute top-2 right-2 bg-zinc-950/70 backdrop-blur-sm text-zinc-400 text-xs px-2 py-0.5 rounded-full font-mono">
           {active + 1}/{screenshots.length}
         </div>
@@ -32,7 +77,7 @@ function ScreenshotsGallery({ screenshots }) {
         {screenshots.map((src, i) => (
           <button
             key={i}
-            onClick={() => setActive(i)}
+            onClick={() => { setActive(i); setPaused(false); }}
             className={`shrink-0 w-24 h-14 rounded overflow-hidden border-2 transition-all duration-150
               ${i === active
                 ? 'border-blue-500 opacity-100'
@@ -61,7 +106,16 @@ function GameDetail({ game, onBack }) {
       ? game.genres.slice(0, 5)
       : [];
 
-  const screenshots = game.screenshots ?? [];
+  // Usa coverImageUrl como placeholder imediato (já em cache no browser)
+  // enquanto os screenshots reais carregam em background
+  const screenshots =
+    game.screenshots?.length > 0
+      ? game.screenshots
+      : game.coverImageUrl
+      ? [game.coverImageUrl]
+      : [];
+
+  const screenshotsLoading = game.screenshotsLoading ?? false;
 
   return (
     <div className="w-full grid grid-cols-1 lg:grid-cols-4 gap-6 animate-slide-up">
@@ -209,15 +263,17 @@ function GameDetail({ game, onBack }) {
         )}
 
         {/* Screenshots gallery */}
-        {screenshots.length > 0 ? (
+        <div className="relative">
           <ScreenshotsGallery screenshots={screenshots} />
-        ) : (
-          <div className="w-full aspect-video bg-zinc-900 border border-zinc-800 rounded-xl
-                          flex flex-col items-center justify-center gap-3 text-zinc-700">
-            <Image className="w-10 h-10" />
-            <span className="text-sm">Screenshots disponíveis em breve</span>
-          </div>
-        )}
+          {screenshotsLoading && (
+            <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-10
+                            bg-zinc-950/80 backdrop-blur-sm text-zinc-400 text-xs
+                            px-3 py-1 rounded-full flex items-center gap-2 animate-pulse pointer-events-none">
+              <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-ping" />
+              Carregando screenshots…
+            </div>
+          )}
+        </div>
 
       </div>
     </div>

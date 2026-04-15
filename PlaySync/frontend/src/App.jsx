@@ -20,18 +20,29 @@ const normalizeImageUrl = (url) => {
   return url;
 };
 
+const steamCapsuleUrl = (appId) =>
+  `https://cdn.akamai.steamstatic.com/steam/apps/${appId}/header.jpg`;
+
 const adaptSteamData = (steamData) => {
   const items = Array.isArray(steamData) ? steamData : steamData?.items ?? [];
-  return items.map((item) => ({
-    id: item.id || item.idGame,
-    title: item.name,
-    coverImageUrl: normalizeImageUrl(item.tiny_image || item.img || item.coverImageUrl),
-    backgroundImageUrl: normalizeImageUrl(item.tiny_image || item.img || item.backgroundImageUrl),
-    developer: 'Steam',
-    offers: item.price
-      ? [{ id: item.id || 0, currentPrice: item.price.final || 0, originalPrice: item.price.initial || 0 }]
-      : [{ id: item.id || 0, currentPrice: 0, originalPrice: 0 }],
-  }));
+  return items.map((item, index) => {
+    const appId = item.id || item.idGame;
+    // Chave única: appId real ou índice como fallback para evitar chaves duplicadas
+    const uniqueId = appId || `fallback-${index}`;
+    const capsule = appId ? steamCapsuleUrl(appId) : null;
+    const tinyImage = normalizeImageUrl(item.tiny_image || item.img);
+    return {
+      id: uniqueId,
+      title: item.name,
+      coverImageUrl: capsule || tinyImage,
+      backgroundImageUrl: capsule || tinyImage,
+      tinyImageUrl: tinyImage, // fallback quando a capsule não carrega
+      developer: 'Steam',
+      offers: item.price
+        ? [{ id: uniqueId, currentPrice: item.price.final || 0, originalPrice: item.price.initial || 0 }]
+        : [{ id: uniqueId, currentPrice: 0, originalPrice: 0 }],
+    };
+  });
 };
 
 // ─── App ─────────────────────────────────────────────────────
@@ -75,34 +86,67 @@ function App() {
     const needsPrices =
       !game.offers || game.offers.length === 0 || game.offers[0]?.currentPrice === 0;
 
+    // Steam App ID: direto no objeto (RAWG games enriquecidos) ou derivado do id (busca Steam)
+    const resolvedSteamAppId = game.steamAppId || (typeof game.id === 'number' ? game.id : null);
+    // Nome correto na Steam: evita buscar pelo nome RAWG que pode não existir na Steam
+    const searchTitle = game.steamName || game.title;
+
     let enrichedGame = game;
 
     if (needsPrices) {
       try {
-        const results = await gameService.searchGames(game.title);
+        const results = await gameService.searchGames(searchTitle);
         if (results?.items?.length > 0) {
           const steamGame = adaptSteamData({ items: results.items })[0];
           enrichedGame = {
-            ...game,
+            ...enrichedGame,
             id: steamGame.id,
-            coverImageUrl: game.coverImageUrl || game.backgroundImageUrl || steamGame.coverImageUrl,
-            backgroundImageUrl: game.backgroundImageUrl || game.coverImageUrl || steamGame.backgroundImageUrl,
+            rawgId: game.rawgId,
+            coverImageUrl: game.coverImageUrl || steamGame.coverImageUrl,
+            backgroundImageUrl: game.backgroundImageUrl || steamGame.backgroundImageUrl,
             offers: steamGame.offers,
           };
         }
-      } catch {
-        // fall through — show game without prices
-      }
+      } catch { /* sem preços, ok */ }
     }
 
-    setSelectedGame(enrichWithMockData(enrichedGame));
+    const activeSteamAppId = resolvedSteamAppId || (typeof enrichedGame.id === 'number' ? enrichedGame.id : null);
+    const willFetchScreenshots = !!activeSteamAppId || !!game.rawgId;
+
+    const base = enrichWithMockData(enrichedGame);
+    setSelectedGame({
+      ...base,
+      screenshots: base.screenshots?.length > 0 ? base.screenshots : [],
+      screenshotsLoading: willFetchScreenshots,
+    });
     window.scrollTo({ top: 0, behavior: 'instant' });
+
+    const applyScreenshots = (screenshots) => {
+      setSelectedGame((current) =>
+        current ? { ...current, screenshots: screenshots?.length > 0 ? screenshots : current.screenshots, screenshotsLoading: false } : current
+      );
+    };
+
+    // Prefere Steam appdetails (ID exato) para qualquer jogo que tenha steamAppId
+    if (activeSteamAppId) {
+      gameService.getSteamScreenshots(activeSteamAppId).then(applyScreenshots).catch(() => applyScreenshots([]));
+    } else if (game.rawgId) {
+      gameService.getGameScreenshots(game.rawgId).then(applyScreenshots).catch(() => applyScreenshots([]));
+    }
   };
 
   // ── Derived state ─────────────────────────────────────────
   const displayResults = hasSearched
     ? games.length > 0
-      ? adaptSteamData({ items: games })
+      ? (() => {
+          const seen = new Set();
+          return adaptSteamData({ items: games }).filter(g => {
+            const k = String(g.id);
+            if (seen.has(k)) return false;
+            seen.add(k);
+            return true;
+          });
+        })()
       : []
     : null;
 

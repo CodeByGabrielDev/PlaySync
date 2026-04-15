@@ -37,7 +37,10 @@ function GameCard({ game, onClick, variant = 'search' }) {
           alt={game.title}
           loading="lazy"
           className={`w-full ${imgHeight} object-cover group-hover:scale-105 transition-transform duration-500`}
-          onError={(e) => { e.target.src = FALLBACK_IMAGE; }}
+          onError={(e) => {
+            e.target.src = game.tinyImageUrl || FALLBACK_IMAGE;
+            e.target.onerror = () => { e.target.src = FALLBACK_IMAGE; };
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent opacity-70" />
 

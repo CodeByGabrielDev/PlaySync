@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.playsync.demo.dtoresponse.RawgGameResponse;
+import com.playsync.demo.dtoresponse.RawgScreenshotListResponse;
 
 import reactor.core.publisher.Mono;
 
@@ -74,6 +75,22 @@ public class RawgClient {
 	}
 
 	/**
+	 * Busca candidatos por nome para enriquecimento — retorna até 5 resultados
+	 * para que o serviço escolha o melhor match por similaridade
+	 */
+	public Mono<RawgGameResponse> searchGameCandidates(String name) {
+		return this.rawgWebClient.get()
+				.uri(uri -> uri.path("/games")
+						.queryParam("key", apiKey)
+						.queryParam("search", name)
+						.queryParam("page_size", 5)
+						.queryParam("stores", 1) // filtra apenas jogos disponíveis na Steam
+						.build())
+				.retrieve()
+				.bodyToMono(RawgGameResponse.class);
+	}
+
+	/**
 	 * Busca detalhes de um jogo específico
 	 * Endpoint: https://api.rawg.io/api/games/{id}?key=API_KEY
 	 */
@@ -84,5 +101,19 @@ public class RawgClient {
 						.build(gameId))
 				.retrieve()
 				.bodyToMono(Object.class);
+	}
+
+	/**
+	 * Busca screenshots em alta resolução de um jogo específico
+	 * Endpoint: https://api.rawg.io/api/games/{id}/screenshots?key=API_KEY
+	 * Retorna imagens de 1280x720 a 1920x1080
+	 */
+	public Mono<RawgScreenshotListResponse> getGameScreenshots(Long gameId) {
+		return this.rawgWebClient.get()
+				.uri(uri -> uri.path("/games/{id}/screenshots")
+						.queryParam("key", apiKey)
+						.build(gameId))
+				.retrieve()
+				.bodyToMono(RawgScreenshotListResponse.class);
 	}
 }

@@ -14,6 +14,15 @@ export const API_ENDPOINTS = {
   
   // Obter detalhes de um jogo específico
   GAME_DETAILS: (gameId) => `${API_BASE_URL}/api/games/${gameId}`,
+
+  // Buscar screenshots em alta resolução pelo ID RAWG (1280x720 a 1920x1080)
+  GAME_SCREENSHOTS: (rawgId) => `${API_BASE_URL}/api-playsync/games/${rawgId}/screenshots`,
+
+  // Enriquecer jogo pelo nome: rawgId + backgroundImage + screenshots
+  GAME_ENRICH: (name) => `${API_BASE_URL}/api-playsync/games/enrich?name=${encodeURIComponent(name)}`,
+
+  // Screenshots 1920x1080 pelo Steam App ID — sem ambiguidade de nome
+  STEAM_SCREENSHOTS: (appId) => `${API_BASE_URL}/api-playsync/steam/${appId}/screenshots`,
   
   // Obter jogos em destaque
   FEATURED_GAMES: `${API_BASE_URL}/api/games/featured`,
@@ -80,6 +89,21 @@ export const gameService = {
   // Obter lista de lojas
   getStores: async () => {
     return fetchAPI(API_ENDPOINTS.STORES);
+  },
+
+  // Buscar screenshots em alta resolução pelo ID RAWG
+  getGameScreenshots: async (rawgId) => {
+    return fetchAPI(API_ENDPOINTS.GAME_SCREENSHOTS(rawgId));
+  },
+
+  // Enriquecer jogo da busca Steam com dados RAWG (rawgId + imagem HD + screenshots)
+  enrichGame: async (name) => {
+    return fetchAPI(API_ENDPOINTS.GAME_ENRICH(name));
+  },
+
+  // Screenshots 1920x1080 pelo Steam App ID
+  getSteamScreenshots: async (appId) => {
+    return fetchAPI(API_ENDPOINTS.STEAM_SCREENSHOTS(appId));
   },
 };
 

@@ -79,17 +79,51 @@ export const useGames = () => {
 
   const adaptGame = (data) => {
     const imgUrl = data.img || data.tiny_image || data.background_image || '';
-    const normalizedUrl = normalizeImageUrl(imgUrl);
+    const backgroundUrl = normalizeImageUrl(imgUrl);
+    const capsuleUrl = data.steamCapsuleUrl || null;
+    const rawgId = data.idGame || data.id || 0;
     return {
-      id: data.idGame || data.id || 0,
+      id: rawgId,
+      rawgId,
       title: data.name || 'Sem título',
-      coverImageUrl: normalizedUrl,
-      backgroundImageUrl: normalizedUrl,
+      // coverImageUrl: capsule com logo (cards de trending) — fallback para wide art
+      coverImageUrl: capsuleUrl || backgroundUrl,
+      // backgroundImageUrl: wide art sem logo (destaque principal hero)
+      backgroundImageUrl: backgroundUrl,
+      tinyImageUrl: backgroundUrl,
       genres: data.rawgDetails?.nomeGeneros || data.nomeGeneros || data.genres || '',
       rating: data.rawgDetails?.avaliacao || data.avaliacao || data.rating || 0,
       platforms: data.rawgDetails?.nomePlataformas || data.nomePlataformas || data.platforms || '',
       offers: [],
+      screenshots: data.screenshots || [],
     };
+  };
+
+  // Normaliza nome: lowercase, sem pontuação
+  const normName = (s) => (s || '').toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+
+  // Busca Steam App ID pelo nome — retorna capsule URL + steamAppId + steamName
+  const resolveSteamCapsule = async (game) => {
+    try {
+      const res = await gameService.searchGames(game.title);
+      const items = res?.items ?? [];
+      const target = normName(game.title);
+      const match =
+        items.find(i => normName(i.name) === target) ||
+        items.find(i => {
+          const n = normName(i.name);
+          return Math.abs(n.length - target.length) <= 4 && (n.startsWith(target) || target.startsWith(n));
+        });
+      if (match?.id) {
+        return {
+          rawgId: game.rawgId,
+          capsule: `https://cdn.akamai.steamstatic.com/steam/apps/${match.id}/header.jpg`,
+          steamAppId: match.id,
+          steamName: match.name,
+        };
+      }
+    } catch { /* ignora falhas individuais */ }
+    return null;
   };
 
   // Carrega featured + trending em uma única chamada — sem duplicatas garantidas pelo backend
@@ -98,15 +132,32 @@ export const useGames = () => {
 
     try {
       const data = await gameService.getHomeData(10);
-      console.log('Home data response:', JSON.stringify(data, null, 2));
 
-      if (data?.featured) {
-        setFeatured(adaptGame(data.featured));
-      }
+      const featuredGame = data?.featured ? adaptGame(data.featured) : null;
+      const trendingGames = data?.trending?.map(adaptGame) ?? [];
 
-      if (data?.trending && Array.isArray(data.trending)) {
-        setTrending(data.trending.map(adaptGame));
-      }
+      if (featuredGame) setFeatured(featuredGame);
+      if (trendingGames.length) setTrending(trendingGames);
+
+      // Enriquece trending + featured com Steam capsule em background (sem bloquear o render)
+      const toEnrich = [...trendingGames, ...(featuredGame ? [featuredGame] : [])].filter(g => g.rawgId);
+      if (toEnrich.length === 0) return;
+
+      Promise.allSettled(toEnrich.map(resolveSteamCapsule)).then(results => {
+        const capsuleMap = {};
+        results.forEach(r => {
+          if (r.status === 'fulfilled' && r.value) capsuleMap[r.value.rawgId] = r.value;
+        });
+        if (Object.keys(capsuleMap).length === 0) return;
+
+        const applyEnrich = (g) => {
+          const e = capsuleMap[g.rawgId];
+          if (!e) return g;
+          return { ...g, coverImageUrl: e.capsule, steamAppId: e.steamAppId, steamName: e.steamName };
+        };
+        setTrending(prev => prev.map(applyEnrich));
+        setFeatured(prev => prev ? applyEnrich(prev) : prev);
+      });
     } catch (err) {
       console.error('Erro ao carregar dados da home:', err);
       setError(err.message);

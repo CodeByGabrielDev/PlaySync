@@ -12,7 +12,9 @@ import com.playsync.demo.dtoresponse.HomeResponseDTO;
 import com.playsync.demo.dtoresponse.ItensFiltradosPeloTermoDTO;
 import com.playsync.demo.dtoresponse.RawgGame;
 import com.playsync.demo.dtoresponse.RawgGameDetailDTO;
+import com.playsync.demo.dtoresponse.RawgGameEnrichDTO;
 import com.playsync.demo.dtoresponse.RawgGameResponse;
+import com.playsync.demo.dtoresponse.RawgScreenshot;
 import com.playsync.demo.repository.ItensBuscadosPeloTermoRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -138,7 +140,101 @@ public class RawgService {
 		
 		// Define os detalhes da RAWG no DTO principal
 		dto.setRawgDetails(rawgDetails);
-		
+
+		// Short screenshots (640x360) disponíveis no endpoint de lista — usados como prévia
+		if (game.getShortScreenshots() != null && !game.getShortScreenshots().isEmpty()) {
+			List<String> screenshotUrls = game.getShortScreenshots().stream()
+					.map(RawgScreenshot::getImage)
+					.filter(img -> img != null && !img.isBlank())
+					.collect(Collectors.toList());
+			dto.setScreenshots(screenshotUrls);
+		}
+
+		// Extrai Steam App ID das stores para montar capsule image (header.jpg com logo do jogo)
+		if (game.getStores() != null) {
+			game.getStores().stream()
+					.filter(s -> s.getUrl() != null && s.getUrl().contains("store.steampowered.com/app/"))
+					.findFirst()
+					.ifPresent(s -> {
+						String[] parts = s.getUrl().split("/app/");
+						if (parts.length > 1) {
+							String appIdStr = parts[1].replaceAll("[^0-9].*", "");
+							if (!appIdStr.isEmpty()) {
+								dto.setSteamCapsuleUrl(
+									"https://cdn.akamai.steamstatic.com/steam/apps/" + appIdStr + "/header.jpg"
+								);
+							}
+						}
+					});
+		}
+
 		return dto;
+	}
+
+	/**
+	 * Busca por nome no RAWG e retorna rawgId + background_image + short_screenshots.
+	 * Busca até 5 candidatos e escolhe o que mais se parece com o nome original.
+	 * Retorna null se nenhum candidato passar no threshold de similaridade.
+	 */
+	public Mono<RawgGameEnrichDTO> enrichByName(String name) {
+		return rawgClient.searchGameCandidates(name)
+				.map(response -> {
+					if (response.getResults() == null || response.getResults().isEmpty()) {
+						return null;
+					}
+					RawgGame best = response.getResults().stream()
+							.filter(g -> g.getName() != null && nameSimilar(g.getName(), name))
+							.findFirst()
+							.orElse(null);
+
+					if (best == null) return null;
+
+					List<String> screenshots = List.of();
+					if (best.getShortScreenshots() != null) {
+						screenshots = best.getShortScreenshots().stream()
+								.map(RawgScreenshot::getImage)
+								.filter(img -> img != null && !img.isBlank())
+								.collect(Collectors.toList());
+					}
+					return new RawgGameEnrichDTO(best.getId(), best.getBackgroundImage(), screenshots);
+				});
+	}
+
+	/**
+	 * Verifica se dois nomes de jogo são similares o suficiente para serem o mesmo título.
+	 * Normaliza (lowercase, sem pontuação) e checa se um contém o outro.
+	 */
+	private boolean nameSimilar(String rawgName, String searchName) {
+		String r = normalize(rawgName);
+		String s = normalize(searchName);
+		if (r.equals(s)) return true;
+		// Aceita se um contém o outro e a diferença de tamanho é razoável (evita falsos como "LEGO X" vs "X")
+		if (r.contains(s) || s.contains(r)) {
+			int lenDiff = Math.abs(r.length() - s.length());
+			int minLen = Math.min(r.length(), s.length());
+			return lenDiff <= minLen; // diferença não pode ser maior que o próprio nome menor
+		}
+		return false;
+	}
+
+	private String normalize(String s) {
+		return s.toLowerCase().replaceAll("[^a-z0-9\\s]", "").trim();
+	}
+
+	/**
+	 * Busca screenshots em alta resolução (1280x720 a 1920x1080) de um jogo via endpoint dedicado.
+	 * Endpoint RAWG: GET /api/games/{id}/screenshots
+	 */
+	public Mono<List<String>> getGameScreenshots(Long rawgGameId) {
+		return rawgClient.getGameScreenshots(rawgGameId)
+				.map(response -> {
+					if (response.getResults() == null || response.getResults().isEmpty()) {
+						return List.<String>of();
+					}
+					return response.getResults().stream()
+							.map(RawgScreenshot::getImage)
+							.filter(img -> img != null && !img.isBlank())
+							.collect(Collectors.toList());
+				});
 	}
 }

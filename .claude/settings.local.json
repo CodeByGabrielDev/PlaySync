@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(ls src/components/**/*.jsx)"
+      "Bash(ls src/components/**/*.jsx)",
+      "Bash(xargs grep *)"
     ]
   }
 }

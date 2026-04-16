@@ -130,7 +130,20 @@ function GameDetail({ game, onBack }) {
               src={game.coverImageUrl || game.backgroundImageUrl || FALLBACK_IMAGE}
               alt={game.title}
               className="w-full h-56 object-cover"
-              onError={(e) => { e.target.src = FALLBACK_IMAGE; }}
+              onError={(e) => {
+                const next = game.tinyImageUrl && game.tinyImageUrl !== e.target.src
+                  ? game.tinyImageUrl
+                  : FALLBACK_IMAGE;
+                e.target.onError = null;
+                e.target.onerror = null;
+                e.target.src = next;
+                if (next !== FALLBACK_IMAGE) {
+                  e.target.onerror = () => {
+                    e.target.onerror = null;
+                    e.target.src = FALLBACK_IMAGE;
+                  };
+                }
+              }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/20 to-transparent" />
 

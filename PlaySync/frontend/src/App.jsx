@@ -159,8 +159,8 @@ function App() {
 
       <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
 
-        {/* Hero heading (home only) */}
-        {showHome && (
+        {/* Hero heading */}
+        {showHome ? (
           <div className="text-center mb-10 animate-slide-up">
             <h1 className="text-5xl md:text-7xl font-black font-display mb-4 tracking-tight leading-none">
               <span
@@ -179,6 +179,22 @@ function App() {
               Compare preços de jogos em múltiplas lojas.{' '}
               <span className="text-zinc-300">Sempre no melhor preço.</span>
             </p>
+          </div>
+        ) : (
+          <div className="text-center mb-6 animate-fade-in">
+            <h1 className="text-3xl md:text-5xl font-black font-display tracking-tight leading-none">
+              <span
+                style={{
+                  background: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 55%, #06b6d4 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}
+              >
+                Play
+              </span>
+              <span className="text-zinc-50">Sync</span>
+            </h1>
           </div>
         )}
 

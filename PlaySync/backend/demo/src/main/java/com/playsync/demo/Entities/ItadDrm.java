@@ -27,7 +27,11 @@ public class ItadDrm {
     @ManyToOne
     @JoinColumn(name = "id_itad_deals")
     private ItadDeals itadDeals;
-    
 
-}   
+    public ItadDrm(Long idDrm, String nome, ItadDeals itadDeals) {
+        this.idDrm = idDrm;
+        this.nome = nome;
+        this.itadDeals = itadDeals;
+    }
 
+}

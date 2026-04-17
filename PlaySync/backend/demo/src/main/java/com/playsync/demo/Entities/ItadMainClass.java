@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -24,9 +25,9 @@ public class ItadMainClass {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(name = "id_game")
+    @Column(name = "id_game", unique = true)
     private String idGame;
-    @OneToMany(mappedBy = "itadMainClass")
+    @OneToMany(mappedBy = "itadMainClass", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ItadDeals> itad_deals = new ArrayList<>();
     @Column(name = "data_last_search")
     private LocalDateTime dataLastSearch;

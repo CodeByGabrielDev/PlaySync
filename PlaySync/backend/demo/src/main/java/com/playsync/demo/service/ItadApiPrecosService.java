@@ -31,7 +31,6 @@ import lombok.RequiredArgsConstructor;
 public class ItadApiPrecosService {
 
     private final ItadMainClassRepository itadMainClassRepository;
-
     private final PriceClientItad priceClientItad;
 
     public List<ItadMainClassDto> principalMethod(List<String> ids) {
@@ -40,10 +39,18 @@ public class ItadApiPrecosService {
         if (itadMainClass.isEmpty()) {
             persistDataOfApiInDatabase(callApi(ids));
         }
+
     }
 
     public List<ItadMainClassDto> callApi(List<String> ids) {
         return this.priceClientItad.buscarPrecos(ids).block();
+    }
+
+    private void validDataInDatabase(List<ItadMainClass> listaEntidadeNoBanco) {
+        List<ItadMainClass> listaDeVencidos = new ArrayList<>();
+        for (ItadMainClass itadMainClass : listaEntidadeNoBanco) {
+            
+        }
     }
 
     private void persistDataOfApiInDatabase(List<ItadMainClassDto> itadMainClassDtos) {
@@ -61,7 +68,6 @@ public class ItadApiPrecosService {
                 }
                 itadDeals.setItadMainClass(itadMainClass);
                 itadMainClass.getItad_deals().add(itadDeals);
-
             }
             itadMainClasses.add(itadMainClass);
         }

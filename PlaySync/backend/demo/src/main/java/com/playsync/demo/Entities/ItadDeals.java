@@ -3,6 +3,7 @@ package com.playsync.demo.Entities;
 import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -24,24 +25,25 @@ public class ItadDeals {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private Double price;
+    private Double regular;
+    private Double desconto;
+    private Long shopId;
+    private String shopName;
+    @OneToMany(mappedBy = "itadDeals", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ItadDrm> drms;
+    @OneToMany(mappedBy = "itadDeals", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ItadPlataforms> platforms;
     @ManyToOne
     @JoinColumn(name = "id_itad_main_class")
     private ItadMainClass itadMainClass;
-    @OneToMany(mappedBy = "itadDeals")
-    private List<ItadShop> itadShops = new ArrayList<>();
-    @OneToMany(mappedBy = "itadDeals")
-    private List<ItadPrice> itadPrices = new ArrayList<>();
-    @OneToMany(mappedBy = "itadDeals")
-    private List<ItadRegular> itadRegulars = new ArrayList<>();
-    private Double desconto;
-    @OneToMany(mappedBy = "itadDeals")
-    private List<ItadDrm> itadDrms = new ArrayList<>();
-    @OneToMany(mappedBy = "itadDeals")
-    private List<ItadPlataforms> itadPlataforms = new ArrayList<>();
 
-    public ItadDeals(ItadMainClass itadMainClass, Double desconto) {
-        this.itadMainClass = itadMainClass;
+    public ItadDeals(Double price, Double regular, Double desconto, Long shopId, String shopName) {
+        this.price = price;
+        this.regular = regular;
         this.desconto = desconto;
+        this.shopId = shopId;
+        this.shopName = shopName;
     }
 
 }

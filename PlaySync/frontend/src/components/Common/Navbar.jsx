@@ -1,11 +1,12 @@
+import { Link } from 'react-router-dom';
 import { Gamepad2 } from 'lucide-react';
 
-function Navbar({ onReset }) {
+function Navbar() {
   return (
     <nav className="sticky top-0 z-50 w-full backdrop-blur-md bg-zinc-950/85 border-b border-zinc-800/60">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center">
-        <button
-          onClick={onReset}
+        <Link
+          to="/"
           className="flex items-center gap-2.5 group"
           aria-label="Ir para o início"
         >
@@ -23,7 +24,7 @@ function Navbar({ onReset }) {
           >
             PlaySync
           </span>
-        </button>
+        </Link>
       </div>
     </nav>
   );

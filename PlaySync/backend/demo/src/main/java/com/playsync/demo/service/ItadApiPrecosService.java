@@ -30,14 +30,15 @@ public class ItadApiPrecosService {
 
     private final ItadMainClassRepository itadMainClassRepository;
     private final PriceClientItad priceClientItad;
+
     public List<ItadMainClassDto> principalMethod(List<String> ids) {
         List<ItadMainClass> itadMainClass = this.itadMainClassRepository.findByIds(ids);
 
-        if (itadMainClass.isEmpty()) {
-            return persistDataOfApiInDatabase(callApi(ids));
+        if (itadMainClass == null || itadMainClass.isEmpty()) {
+            return persistDataOfApiInDatabase(callApi(ids), ids);
         }
-        return validDataInDatabase(itadMainClass, ids);
 
+        return validDataInDatabase(itadMainClass, ids);
     }
 
     public List<ItadMainClassDto> callApi(List<String> ids) {
@@ -45,192 +46,259 @@ public class ItadApiPrecosService {
     }
 
     private List<ItadMainClassDto> validDataInDatabase(List<ItadMainClass> listaEntidadeNoBanco, List<String> ids) {
+
         List<ItadMainClass> listaDeVencidos = new ArrayList<>();
         LocalDateTime dataLimite = LocalDateTime.now().minusSeconds(10);
+
         for (ItadMainClass itadMainClass : listaEntidadeNoBanco) {
-            if (itadMainClass.getDataLastSearch().isBefore(dataLimite)) {
+            if (itadMainClass.getDataLastSearch() != null &&
+                    itadMainClass.getDataLastSearch().isBefore(dataLimite)) {
                 listaDeVencidos.add(itadMainClass);
             }
         }
+
         if (listaDeVencidos.isEmpty()) {
             return montaDto(listaEntidadeNoBanco);
         }
-        return atualizaInformacaoVencida(listaDeVencidos, ids);
 
+        return atualizaInformacaoVencida(listaDeVencidos, ids);
     }
 
-    private List<ItadMainClassDto> persistDataOfApiInDatabase(List<ItadMainClassDto> itadMainClassDtos) {
-        List<ItadMainClass> itadMainClasses = new ArrayList<>();
-        for (ItadMainClassDto itadMainClassDto : itadMainClassDtos) {
-            ItadMainClass itadMainClass = new ItadMainClass(itadMainClassDto.getIdGame(), LocalDateTime.now());
-            for (ItadDealsDto itadDealsDto : itadMainClassDto.getDeals()) {
-                ItadDeals itadDeals = new ItadDeals(itadDealsDto.getPrice().getAmount(),
-                        itadDealsDto.getRegular().getAmount(), itadDealsDto.getCut(), itadDealsDto.getShop().getId(),
-                        itadDealsDto.getShop().getName());
-                if (!itadDealsDto.getDrm().isEmpty()) {
-                    insereInformacaoDrm(itadDeals, itadDealsDto);
-                }
-                if (!itadDealsDto.getPlataformas().isEmpty()) {
-                    insereInformacaoPlataforms(itadDeals, itadDealsDto);
-                }
-                itadDeals.setItadMainClass(itadMainClass);
-                itadMainClass.getItad_deals().add(itadDeals);
+    private List<ItadMainClassDto> persistDataOfApiInDatabase(List<ItadMainClassDto> itadMainClassDtos,
+            List<String> ids) {
+
+        List<ItadMainClass> existentes = itadMainClassRepository.findByIds(ids);
+
+        Map<String, ItadMainClass> mapaExistentes = new HashMap<>();
+        if (existentes != null) {
+            for (ItadMainClass existente : existentes) {
+                mapaExistentes.put(existente.getIdGame(), existente);
             }
-            itadMainClasses.add(itadMainClass);
         }
+
+        List<ItadMainClass> itadMainClasses = new ArrayList<>();
+
+        for (ItadMainClassDto dto : itadMainClassDtos) {
+
+            ItadMainClass entity = mapaExistentes.get(dto.getIdGame());
+
+            if (entity == null) {
+                entity = new ItadMainClass(dto.getIdGame(), LocalDateTime.now());
+            } else {
+                entity.setDataLastSearch(LocalDateTime.now());
+                if (entity.getItad_deals() != null) {
+                    entity.getItad_deals().clear();
+                }
+            }
+
+            if (dto.getDeals() != null) {
+                for (ItadDealsDto dealsDto : dto.getDeals()) {
+
+                    ItadDeals deal = new ItadDeals(null, null, null, null, null);
+
+                    auxUpdateInformations(dealsDto, deal);
+
+                    List<DrmItadResponse> drmList = dealsDto.getDrm() == null ? new ArrayList<>() : dealsDto.getDrm();
+                    List<ItadPlataformsDto> platformList = dealsDto.getPlataformas() == null ? new ArrayList<>()
+                            : dealsDto.getPlataformas();
+
+                    insereInformacaoDrm(deal, drmList);
+                    insereInformacaoPlataforms(deal, platformList);
+
+                    deal.setItadMainClass(entity);
+
+                    if (entity.getItad_deals() == null) {
+                        entity.setItad_deals(new ArrayList<>());
+                    }
+
+                    entity.getItad_deals().add(deal);
+                }
+            }
+
+            itadMainClasses.add(entity);
+        }
+
         this.itadMainClassRepository.saveAll(itadMainClasses);
         return montaDto(itadMainClasses);
     }
 
-    private List<ItadMainClassDto> atualizaInformacaoVencida(List<ItadMainClass> listaDeVencidos,
-            List<String> ids) {
-        List<ItadMainClassDto> callApi = callApi(ids);
-        Map<String, ItadMainClassDto> mapperEntity = new HashMap<>();
-        for (ItadMainClassDto itadMainClassDto : callApi) {
-            mapperEntity.put(itadMainClassDto.getIdGame(), itadMainClassDto);
-        }
-        for (ItadMainClass itadMainClass : listaDeVencidos) {
-            ItadMainClassDto itadMainClassDto = mapperEntity.get(itadMainClass.getIdGame());
-            itadMainClass.setDataLastSearch(LocalDateTime.now());
-            if (itadMainClassDto == null) {
-                continue;
-            }
-            itadMainClass.getItad_deals().clear();
-            for (ItadDealsDto itadDealsDto : itadMainClassDto.getDeals()) {
-                ItadDeals itadDeals = new ItadDeals(null, null, null, null, null);
-                auxUpdateInformations(itadDealsDto, itadDeals);
+    private List<ItadMainClassDto> atualizaInformacaoVencida(List<ItadMainClass> listaDeVencidos, List<String> ids) {
 
-                if (itadDealsDto.getDrm() != null && !itadDealsDto.getDrm().isEmpty()) {
-                    insereInformacaoDrm(itadDeals, itadDealsDto);
+        List<ItadMainClassDto> callApi = callApi(ids);
+
+        Map<String, ItadMainClassDto> mapperEntity = new HashMap<>();
+        for (ItadMainClassDto dto : callApi) {
+            mapperEntity.put(dto.getIdGame(), dto);
+        }
+
+        for (ItadMainClass entity : listaDeVencidos) {
+
+            ItadMainClassDto dto = mapperEntity.get(entity.getIdGame());
+
+            entity.setDataLastSearch(LocalDateTime.now());
+
+            if (dto == null)
+                continue;
+
+            if (entity.getItad_deals() != null) {
+                entity.getItad_deals().clear();
+            }
+
+            if (dto.getDeals() != null) {
+                for (ItadDealsDto dealsDto : dto.getDeals()) {
+
+                    ItadDeals deal = new ItadDeals(null, null, null, null, null);
+
+                    auxUpdateInformations(dealsDto, deal);
+
+                    List<DrmItadResponse> drmList = dealsDto.getDrm() == null ? new ArrayList<>() : dealsDto.getDrm();
+                    List<ItadPlataformsDto> platformList = dealsDto.getPlataformas() == null ? new ArrayList<>()
+                            : dealsDto.getPlataformas();
+
+                    insereInformacaoDrm(deal, drmList);
+                    insereInformacaoPlataforms(deal, platformList);
+
+                    deal.setItadMainClass(entity);
+
+                    if (entity.getItad_deals() == null) {
+                        entity.setItad_deals(new ArrayList<>());
+                    }
+
+                    entity.getItad_deals().add(deal);
                 }
-                if (itadDealsDto.getPlataformas() != null && !itadDealsDto.getPlataformas().isEmpty()) {
-                    insereInformacaoPlataforms(itadDeals, itadDealsDto);
-                }
-                itadDeals.setItadMainClass(itadMainClass);
-                itadMainClass.getItad_deals().add(itadDeals);
             }
         }
+
         this.itadMainClassRepository.saveAll(listaDeVencidos);
         return montaDto(listaDeVencidos);
     }
 
-    private void auxUpdateInformations(ItadDealsDto itadDealsDto, ItadDeals itadDeals) {
-        if (itadDealsDto.getPrice() != null && itadDealsDto.getPrice().getAmount() != null) {
-            itadDeals.setPrice(itadDealsDto.getPrice().getAmount());
+    private void auxUpdateInformations(ItadDealsDto dto, ItadDeals deal) {
+        if (dto.getPrice() != null && dto.getPrice().getAmount() != null) {
+            deal.setPrice(dto.getPrice().getAmount());
         }
-        if (itadDealsDto.getRegular() != null && itadDealsDto.getRegular().getAmount() != null) {
-            itadDeals.setRegular(itadDealsDto.getRegular().getAmount());
+        if (dto.getRegular() != null && dto.getRegular().getAmount() != null) {
+            deal.setRegular(dto.getRegular().getAmount());
         }
-        if (itadDealsDto.getShop() != null && itadDealsDto.getShop().getId() != null) {
-            itadDeals.setShopId(itadDealsDto.getShop().getId());
-            if (itadDealsDto.getShop().getName() != null) {
-                itadDeals.setShopName(itadDealsDto.getShop().getName());
+        if (dto.getShop() != null && dto.getShop().getId() != null) {
+            deal.setShopId(dto.getShop().getId());
+            if (dto.getShop().getName() != null) {
+                deal.setShopName(dto.getShop().getName());
             }
         }
-        if (itadDealsDto.getCut() != null) {
-            itadDeals.setDesconto(itadDealsDto.getCut());
-        }
-
-    }
-
-    private void insereInformacaoDrm(ItadDeals itadDeals, ItadDealsDto itadDealsDto) {
-        for (DrmItadResponse drmItadResponse : itadDealsDto.getDrm()) {
-            ItadDrm itadDrm = new ItadDrm(drmItadResponse.getId(), drmItadResponse.getName(), null);
-            itadDrm.setItadDeals(itadDeals);
-            itadDeals.getDrms().add(itadDrm);
+        if (dto.getCut() != null) {
+            deal.setDesconto(dto.getCut());
         }
     }
 
-    private void insereInformacaoPlataforms(ItadDeals itadDeals, ItadDealsDto itadDealsDto) {
-        for (ItadPlataformsDto itadPlataformsDto : itadDealsDto.getPlataformas()) {
-            ItadPlataforms itadPlataforms = new ItadPlataforms(itadPlataformsDto.getId(), itadPlataformsDto.getName(),
-                    null);
-            itadPlataforms.setItadDeals(itadDeals);
-            itadDeals.getPlatforms().add(itadPlataforms);
+    private void insereInformacaoDrm(ItadDeals deal, List<DrmItadResponse> drmList) {
+
+        if (deal.getDrms() == null) {
+            deal.setDrms(new ArrayList<>());
+        }
+
+        for (DrmItadResponse drm : drmList) {
+            ItadDrm entity = new ItadDrm(drm.getId(), drm.getName(), null);
+            entity.setItadDeals(deal);
+            deal.getDrms().add(entity);
+        }
+    }
+
+    private void insereInformacaoPlataforms(ItadDeals deal, List<ItadPlataformsDto> listDto) {
+
+        if (deal.getPlatforms() == null) {
+            deal.setPlatforms(new ArrayList<>());
+        }
+
+        for (ItadPlataformsDto p : listDto) {
+            ItadPlataforms entity = new ItadPlataforms(p.getId(), p.getName(), null);
+            entity.setItadDeals(deal);
+            deal.getPlatforms().add(entity);
         }
     }
 
     private List<ItadMainClassDto> montaDto(List<ItadMainClass> entidades) {
-        List<ItadMainClassDto> itadMainClassDtos = new ArrayList<>();
-        for (ItadMainClass itadMainClass : entidades) {
-            ItadMainClassDto itadMainClassDto = new ItadMainClassDto(itadMainClass.getIdGame(), null);
-            List<ItadDealsDto> itadDealsDtos = new ArrayList<>();
-            if (itadMainClass.getItad_deals() != null && !itadMainClass.getItad_deals().isEmpty()) {
-                for (ItadDeals itadDeals : itadMainClass.getItad_deals()) {
-                    ItadDealsDto itadDealsDto = new ItadDealsDto();
-                    auxMontaDto(itadDeals, itadDealsDto);
-                    itadDealsDtos.add(itadDealsDto);
+
+        List<ItadMainClassDto> dtos = new ArrayList<>();
+
+        for (ItadMainClass entity : entidades) {
+
+            ItadMainClassDto dto = new ItadMainClassDto(entity.getIdGame(), null);
+            List<ItadDealsDto> dealsDtos = new ArrayList<>();
+
+            if (entity.getItad_deals() != null) {
+                for (ItadDeals deal : entity.getItad_deals()) {
+                    ItadDealsDto d = new ItadDealsDto();
+                    auxMontaDto(deal, d);
+                    dealsDtos.add(d);
                 }
             }
-            itadMainClassDto.setDeals(itadDealsDtos);
-            itadMainClassDtos.add(itadMainClassDto);
+
+            dto.setDeals(dealsDtos);
+            dtos.add(dto);
         }
-        return itadMainClassDtos;
+
+        return dtos;
     }
 
-    private void auxMontaDto(ItadDeals itadDeals, ItadDealsDto itadDealsDto) {
-        if (itadDeals != null) {
-            if (itadDeals.getDesconto() != null) {
-                itadDealsDto.setCut(itadDeals.getDesconto());
-            }
-            if (itadDeals.getShopId() != null || itadDeals.getShopName() != null) {
-                ItadShopDto shop = new ItadShopDto();
-                shop.setId(itadDeals.getShopId());
-                shop.setName(itadDeals.getShopName());
-                itadDealsDto.setShop(shop);
-            }
+    private void auxMontaDto(ItadDeals deal, ItadDealsDto dto) {
 
-            if (itadDeals.getPrice() != null) {
-                ItadPriceDto price = new ItadPriceDto();
-                price.setAmount(itadDeals.getPrice());
-                itadDealsDto.setPrice(price);
-            }
-
-            if (itadDeals.getRegular() != null) {
-                ItadRegularDto regular = new ItadRegularDto();
-                regular.setAmount(itadDeals.getRegular());
-                itadDealsDto.setRegular(regular);
-            }
-
-            validaInformacaoDrmParaRetornoDto(itadDeals, itadDealsDto);
-            validaInformacaoPlataforms(itadDeals, itadDealsDto);
-
+        if (deal.getDesconto() != null) {
+            dto.setCut(deal.getDesconto());
         }
+
+        if (deal.getShopId() != null || deal.getShopName() != null) {
+            ItadShopDto shop = new ItadShopDto();
+            shop.setId(deal.getShopId());
+            shop.setName(deal.getShopName());
+            dto.setShop(shop);
+        }
+
+        if (deal.getPrice() != null) {
+            ItadPriceDto price = new ItadPriceDto();
+            price.setAmount(deal.getPrice());
+            dto.setPrice(price);
+        }
+
+        if (deal.getRegular() != null) {
+            ItadRegularDto regular = new ItadRegularDto();
+            regular.setAmount(deal.getRegular());
+            dto.setRegular(regular);
+        }
+
+        validaInformacaoDrmParaRetornoDto(deal, dto);
+        validaInformacaoPlataforms(deal, dto);
     }
 
-    private void validaInformacaoDrmParaRetornoDto(ItadDeals itadDeals, ItadDealsDto itadDealsDto) {
-        if (itadDeals.getDrms() != null && !itadDeals.getDrms().isEmpty()) {
-            List<DrmItadResponse> itadResponses = new ArrayList<>();
-            for (ItadDrm itadDrm : itadDeals.getDrms()) {
-                DrmItadResponse drmItadResponse = new DrmItadResponse(null, null);
-                if (itadDrm.getIdDrm() != null) {
-                    drmItadResponse.setId(itadDrm.getIdDrm());
-                }
-                if (itadDrm.getNome() != null) {
-                    drmItadResponse.setName(itadDrm.getNome());
-                }
-                itadResponses.add(drmItadResponse);
+    private void validaInformacaoDrmParaRetornoDto(ItadDeals deal, ItadDealsDto dto) {
 
-            }
-            itadDealsDto.setDrm(itadResponses);
-        }
-    }
+        if (deal.getDrms() != null) {
+            List<DrmItadResponse> list = new ArrayList<>();
 
-    private void validaInformacaoPlataforms(ItadDeals itadDeals, ItadDealsDto itadDealsDto) {
-        if (itadDeals.getPlatforms() != null && !itadDeals.getPlatforms().isEmpty()) {
-            List<ItadPlataformsDto> itadPlataformsDto = new ArrayList<>();
-            for (ItadPlataforms itadPlataforms : itadDeals.getPlatforms()) {
-                ItadPlataformsDto itadPlataformsDtos = new ItadPlataformsDto();
-                if (itadPlataforms.getIdPlataforma() != null) {
-                    itadPlataformsDtos.setId(itadPlataforms.getIdPlataforma());
-                }
-                if (itadPlataforms.getNomePlataforma() != null) {
-                    itadPlataformsDtos.setName(itadPlataforms.getNomePlataforma());
-                }
-                itadPlataformsDto.add(itadPlataformsDtos);
+            for (ItadDrm drm : deal.getDrms()) {
+                DrmItadResponse d = new DrmItadResponse(null, null);
+                d.setId(drm.getIdDrm());
+                d.setName(drm.getNome());
+                list.add(d);
             }
-            itadDealsDto.setPlataformas(itadPlataformsDto);
+
+            dto.setDrm(list);
         }
     }
 
+    private void validaInformacaoPlataforms(ItadDeals deal, ItadDealsDto dto) {
+
+        if (deal.getPlatforms() != null) {
+            List<ItadPlataformsDto> list = new ArrayList<>();
+
+            for (ItadPlataforms p : deal.getPlatforms()) {
+                ItadPlataformsDto d = new ItadPlataformsDto();
+                d.setId(p.getIdPlataforma());
+                d.setName(p.getNomePlataforma());
+                list.add(d);
+            }
+
+            dto.setPlataformas(list);
+        }
+    }
 }

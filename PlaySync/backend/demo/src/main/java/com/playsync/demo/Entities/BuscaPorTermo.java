@@ -29,7 +29,6 @@ public class BuscaPorTermo {
 	private Integer qtdDeItensEncontrados;
 	@OneToMany(mappedBy = "buscaPorTermo")
 	private List<ItensBuscadorPeloTermo> itens = new ArrayList<>();
-
 	public BuscaPorTermo(Integer qtdDeItensEncontrados) {
 		this.qtdDeItensEncontrados = qtdDeItensEncontrados;
 	}

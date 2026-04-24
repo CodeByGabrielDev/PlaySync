@@ -25,21 +25,26 @@ public class ItadAssetsDeItens {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String imagem01;
-    private String arteSecundaria;
+    private String banner145;
+    private String banner300;
+    private String banner400;
+    private String banner600;
+    private String boxart;
     private String idGame;
     @OneToOne
     @JoinColumn(name = "id_itad_busca_por_termo")
     private ItadBuscaPorTermo itadBuscaPorTermo;
-    private LocalDateTime dataLastSearch;
-
-    public ItadAssetsDeItens(String imagem01, String arteSecundaria, String idGame, ItadBuscaPorTermo itadBuscaPorTermo,
-            LocalDateTime dataLastSearch) {
-        this.imagem01 = imagem01;
-        this.arteSecundaria = arteSecundaria;
+    public ItadAssetsDeItens(String banner145, String banner300, String banner400, String banner600, String boxart,
+            String idGame, ItadBuscaPorTermo itadBuscaPorTermo) {
+        this.banner145 = banner145;
+        this.banner300 = banner300;
+        this.banner400 = banner400;
+        this.banner600 = banner600;
+        this.boxart = boxart;
         this.idGame = idGame;
         this.itadBuscaPorTermo = itadBuscaPorTermo;
-        this.dataLastSearch = dataLastSearch;
     }
+
+    
 
 }

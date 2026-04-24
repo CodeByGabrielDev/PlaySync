@@ -54,9 +54,7 @@ public class ItadApiService {
                 mapa.put(e.getIdGame(), e);
             }
         }
-
         List<ItadBuscaPorTermo> salvar = new ArrayList<>();
-
         for (ItadBuscaPorTermoDto dto : dtos) {
 
             if (mapa.containsKey(dto.getIdGame())) {
@@ -67,19 +65,26 @@ public class ItadApiService {
                     dto.getIdGame(),
                     dto.getSlug(),
                     dto.getNomeJogo(),
-                    dto.getTipoDoItem(),
+                    null,
                     LocalDateTime.now(),
                     null);
+            if (dto.getTipoDoItem() != null) {
+                entity.setTipoDoItem(dto.getTipoDoItem());
+            } else {
+                entity.setTipoDoItem("unknown");
+            }
 
             ItadAssetsDeItens assets = null;
 
             if (dto.getItadAssetsLista() != null) {
                 assets = new ItadAssetsDeItens(
-                        dto.getItadAssetsLista().getImagem01(),
-                        dto.getItadAssetsLista().getArteSecundaria(),
+                        dto.getItadAssetsLista().getBanner145(),
+                        dto.getItadAssetsLista().getBanner300(),
+                        dto.getItadAssetsLista().getBanner400(),
+                        dto.getItadAssetsLista().getBanner600(),
+                        dto.getItadAssetsLista().getBoxart(),
                         dto.getIdGame(),
-                        null,
-                        LocalDateTime.now());
+                        null);
             }
 
             if (assets != null) {
@@ -135,12 +140,15 @@ public class ItadApiService {
                 entity.setDataLastSearch(LocalDateTime.now());
                 entity.setNomeJogo(dto.getNomeJogo());
                 entity.setSlug(dto.getSlug());
-                entity.setTipoDoItem(dto.getTipoDoItem());
+                if (dto.getTipoDoItem() != null) {
+                    entity.setTipoDoItem(dto.getTipoDoItem());
+                }
 
                 if (entity.getAssetsItens() != null && dto.getItadAssetsLista() != null) {
-                    entity.getAssetsItens().setImagem01(dto.getItadAssetsLista().getImagem01());
-                    entity.getAssetsItens().setArteSecundaria(dto.getItadAssetsLista().getArteSecundaria());
-                    entity.getAssetsItens().setDataLastSearch(LocalDateTime.now());
+                    entity.getAssetsItens().setBanner145(dto.getItadAssetsLista().getBanner145());
+                    entity.getAssetsItens().setBanner300(dto.getItadAssetsLista().getBanner300());
+                    entity.getAssetsItens().setBanner400(dto.getItadAssetsLista().getBanner400());
+                    entity.getAssetsItens().setBanner600(dto.getItadAssetsLista().getBanner600());
                 }
             }
         }
@@ -159,12 +167,15 @@ public class ItadApiService {
 
         for (ItadBuscaPorTermo e : lista) {
 
-            ItadAssetsLista assets = null;
+            ItadAssetsLista assets = new ItadAssetsLista();
 
             if (e.getAssetsItens() != null) {
                 assets = new ItadAssetsLista(
-                        e.getAssetsItens().getImagem01(),
-                        e.getAssetsItens().getArteSecundaria());
+                        e.getAssetsItens().getBanner145(),
+                        e.getAssetsItens().getBanner300(),
+                        e.getAssetsItens().getBanner400(), e.getAssetsItens().getBanner600(),
+                        e.getAssetsItens().getBoxart());
+
             }
 
             retorno.add(new ItadBuscaPorTermoDto(

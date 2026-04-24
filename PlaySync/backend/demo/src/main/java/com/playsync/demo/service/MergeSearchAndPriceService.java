@@ -74,9 +74,7 @@ public class MergeSearchAndPriceService {
 
     private void validaAssets(ItadBuscaPorTermoDto itadBuscaPorTermoDto,
             MergerSearchAndPriceResponse mergerSearchAndPriceResponse) {
-        if (itadBuscaPorTermoDto.getItadAssetsLista() != null
-                && itadBuscaPorTermoDto.getItadAssetsLista().getImagem01() != null
-                && itadBuscaPorTermoDto.getItadAssetsLista().getArteSecundaria() != null) {
+        if (itadBuscaPorTermoDto.getItadAssetsLista() != null) {
             mergerSearchAndPriceResponse.setItadAssetsLista(itadBuscaPorTermoDto.getItadAssetsLista());
         }
     }

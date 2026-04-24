@@ -25,7 +25,6 @@ public class PriceClientItad {
                 .uri(uriBuilder -> uriBuilder
                         .path("/prices/v3")
                         .queryParam("key", "baf038a8b8a8039c1e5f0def483913f055640f6e")
-                        .queryParam("country", "BR")
                         .build())
                 .bodyValue(ids)
                 .retrieve()
